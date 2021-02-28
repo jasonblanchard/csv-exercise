@@ -1,8 +1,10 @@
 package parser
 
 import (
+	"bytes"
 	"encoding/csv"
 	"fmt"
+	"io"
 	"regexp"
 	"strconv"
 	"strings"
@@ -35,7 +37,6 @@ func CsvToRecords(s string) ([][]string, error) {
 }
 
 // RecordsToEntities converts records from CSV reader to entity instances
-// TODO: Output row-level errors here?
 func RecordsToEntities(input [][]string) ([]*Entity, []*RowError, error) {
 	rows := input[1:]
 	fmt.Println(rows)
@@ -167,4 +168,23 @@ func ValidatePhoneNumber(value string) error {
 		return nil
 	}
 	return fmt.Errorf("PHONE_NUMBER should match pattern ###-###-####")
+}
+
+// ErrorsToCSV Convert a slice of row errors to CSV
+func ErrorsToCSV(rowErrors []*RowError) (string, error) {
+	data := [][]string{
+		{"LINE_NUM", "ERROR_MSG"},
+	}
+
+	for _, rowError := range rowErrors {
+		row := []string{fmt.Sprintf("%d", rowError.LineNumber), rowError.Message}
+		data = append(data, row)
+	}
+
+	var buf bytes.Buffer
+	writer := csv.NewWriter(&buf)
+
+	err := writer.WriteAll(data)
+	output, err := io.ReadAll(&buf)
+	return string(output), err
 }

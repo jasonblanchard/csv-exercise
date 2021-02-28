@@ -189,3 +189,26 @@ func TestValidatePhoneNumber(t *testing.T) {
 		assert.Equal(t, test.expected, output, fmt.Sprintf("Test %v", i), test)
 	}
 }
+
+func TestErrorsToCSV(t *testing.T) {
+	input := []*RowError{
+		{
+			LineNumber: 2,
+			Message:    "FIRST_NAME is required",
+		},
+		{
+			LineNumber: 2,
+			Message:    "LAST_NAME is required",
+		},
+	}
+
+	output, err := ErrorsToCSV(input)
+	if err != nil {
+		panic(err)
+	}
+	expected := `LINE_NUM,ERROR_MSG
+2,FIRST_NAME is required
+2,LAST_NAME is required
+`
+	assert.Equal(t, expected, output)
+}
