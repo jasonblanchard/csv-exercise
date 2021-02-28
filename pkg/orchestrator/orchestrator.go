@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"strings"
 
 	"github.com/jasonblanchard/csv-exercise/pkg/parser"
 )
@@ -17,6 +19,8 @@ import (
 // HandleFile parses file and writes results to output and error directory
 func HandleFile(inputDirectory string, filename string, outputDirectory string, errorDirectory string) error {
 	data, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", inputDirectory, filename))
+
+	nameWithoutExtension := strings.Split(filename, ".")[0]
 
 	if err != nil {
 		return err
@@ -42,17 +46,27 @@ func HandleFile(inputDirectory string, filename string, outputDirectory string, 
 		return err
 	}
 
-	fmt.Println(string(json))
-	err = ioutil.WriteFile(fmt.Sprintf("%s/%s", outputDirectory, "TODO.json"), json, 0644)
+	err = ioutil.WriteFile(fmt.Sprintf("%s/%s.json", outputDirectory, nameWithoutExtension), json, 0644)
 	if err != nil {
 		return err
 	}
 
 	if len(rowErrors) > 0 {
-		err := ioutil.WriteFile(fmt.Sprintf("%s/%s", errorDirectory, "TODO.csv"), []byte(rowErrorsCsv), 0644)
+		err := ioutil.WriteFile(fmt.Sprintf("%s/%s.csv", errorDirectory, nameWithoutExtension), []byte(rowErrorsCsv), 0644)
 		if err != nil {
 			return err
 		}
+	} else {
+		// TODO: Note sure it this is desireable, putting here for convenience
+		err = os.Remove(fmt.Sprintf("%s/%s.csv", errorDirectory, nameWithoutExtension))
+		if err != nil {
+			return err
+		}
+	}
+
+	err = os.Remove(fmt.Sprintf("%s/%s", inputDirectory, filename))
+	if err != nil {
+		return err
 	}
 
 	return nil
