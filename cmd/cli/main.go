@@ -14,8 +14,15 @@ func main() {
 
 	flag.Parse()
 
-	err := orchestrator.HandleFile(inputDirectory, "example.csv", outputDirectory, errorDirectory)
-	if err != nil {
-		panic(err)
+	o := &orchestrator.Orchestrator{
+		InputDirectory:  inputDirectory,
+		OutputDirectory: outputDirectory,
+		ErrorDirectory:  errorDirectory,
 	}
+
+	// err := o.HandleFile("example.csv")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	o.Run()
 }

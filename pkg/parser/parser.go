@@ -38,6 +38,11 @@ func CsvToRecords(s string) ([][]string, error) {
 
 // RecordsToEntities converts records from CSV reader to entity instances
 func RecordsToEntities(input [][]string) ([]*Entity, []*RowError, error) {
+	if len(input) == 0 {
+		// NOOP
+		return nil, nil, nil
+	}
+
 	rows := input[1:]
 
 	output := []*Entity{}
