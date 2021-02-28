@@ -39,7 +39,6 @@ func CsvToRecords(s string) ([][]string, error) {
 // RecordsToEntities converts records from CSV reader to entity instances
 func RecordsToEntities(input [][]string) ([]*Entity, []*RowError, error) {
 	rows := input[1:]
-	fmt.Println(rows)
 
 	output := []*Entity{}
 	errors := []*RowError{}
