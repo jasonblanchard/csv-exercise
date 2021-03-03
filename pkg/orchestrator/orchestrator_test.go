@@ -60,6 +60,9 @@ func TestHandleFile(t *testing.T) {
 	assert.Equal(t, "LINE_NUM,ERROR_MSG\n4,FIRST_NAME is required\n4,INTERNAL_ID must be an 8 digit positive integer\n4,PHONE_NUMBER should match pattern ###-###-####\n", string(errors))
 	assert.Equal(t, true, os.IsNotExist(err))
 
+	// Simulate receiving the processed message
+	o.Processed = append(o.Processed, "input.csv")
+
 	// Ensure that it doesn't re-process a file with the same name
 	csvInput = `INTERNAL_ID,FIRST_NAME,MIDDLE_NAME,LAST_NAME,PHONE_NUM
 12345678,Bobby,,Tables II,555-555-5555

@@ -17,34 +17,22 @@ import (
 
 // Orchestrator orchestrates the application lifecycle
 type Orchestrator struct {
-	InputDirectory  string
-	OutputDirectory string
-	ErrorDirectory  string
-	Processed       []string
+	InputDirectory     string
+	OutputDirectory    string
+	ErrorDirectory     string
+	Processed          []string
+	FinishedProcessing chan string
 }
 
 // Run Watch directory and handle new files
 func (o *Orchestrator) Run() {
 	fmt.Println(fmt.Sprintf("Watching for CSV files in %s", o.InputDirectory))
 
-	// for {
-	// 	files, err := ioutil.ReadDir(o.InputDirectory)
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	// 	for _, file := range files {
-	// 		if match, _ := regexp.Match("^.+\\.csv$", []byte(file.Name())); match == true {
-	// 			fmt.Println(fmt.Sprintf("Processing %s/%s", o.InputDirectory, file.Name()))
-	// 			err := o.HandleFile(file.Name())
-	// 			if err != nil {
-	// 				fmt.Println(err)
-	// 			}
-	// 		}
-	// 	}
-
-	// 	// Wait a bit between cycles to let the calling code catch up and prevent unnecessary work.
-	// 	time.Sleep(100 * time.Millisecond)
-	// }
+	go func() {
+		for file := range o.FinishedProcessing {
+			o.Processed = append(o.Processed, file)
+		}
+	}()
 
 	// Process files already in the input directory
 	files, err := ioutil.ReadDir(o.InputDirectory)
@@ -74,7 +62,6 @@ func (o *Orchestrator) Run() {
 				fmt.Println(fmt.Sprintf("Processing %s", event.FileInfo.Name()))
 				err := o.HandleFile(event.FileInfo.Name())
 				if err != nil {
-					// TODO: What should happen in this case? Remove the file? Try to re-process it again?
 					fmt.Println(err)
 				}
 			case err := <-w.Error:
@@ -148,9 +135,10 @@ func (o *Orchestrator) HandleFile(filename string) error {
 		return err
 	}
 
-	// NOTE: I think this could create a race condition between orchestrator passes because we're changing shared state inside the goroutines.
-	// TODO: Clarify this part of the spec: "in the event of file name collision, the latest file should overwrite the earlier version."
-	o.Processed = append(o.Processed, filename)
+	select {
+	case o.FinishedProcessing <- filename:
+	default:
+	}
 
 	return nil
 }
