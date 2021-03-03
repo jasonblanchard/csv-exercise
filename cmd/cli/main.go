@@ -8,9 +8,11 @@ import (
 
 func main() {
 	var inputDirectory, outputDirectory, errorDirectory string
+	var clean bool
 	flag.StringVar(&inputDirectory, "input", ".", "input directory")
 	flag.StringVar(&outputDirectory, "output", ".", "output directory")
 	flag.StringVar(&errorDirectory, "errors", ".", "error directory")
+	flag.BoolVar(&clean, "clean", false, "remove *.csv files from output and error directories before running")
 
 	flag.Parse()
 
@@ -20,9 +22,9 @@ func main() {
 		ErrorDirectory:  errorDirectory,
 	}
 
-	// err := o.HandleFile("example.csv")
-	// if err != nil {
-	// 	panic(err)
-	// }
+	if clean == true {
+		o.Clean()
+	}
+
 	o.Run()
 }
