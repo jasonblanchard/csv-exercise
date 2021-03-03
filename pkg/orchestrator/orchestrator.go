@@ -4,18 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/jasonblanchard/csv-exercise/pkg/parser"
-	"github.com/radovskyb/watcher"
 )
 
 // Orchestrator orchestrates the application lifecycle
-// TODO: Refactor to reader/writer interfaces? That would be more testable
 type Orchestrator struct {
 	InputDirectory  string
 	OutputDirectory string
@@ -25,44 +22,54 @@ type Orchestrator struct {
 
 // Run Watch directory and handle new files
 func (o *Orchestrator) Run() {
-	// Process all the files in the directory already
-	files, err := ioutil.ReadDir(o.InputDirectory)
-	if err != nil {
-		panic(err)
-	}
-	for _, file := range files {
-		if match, _ := regexp.Match("^.+\\.csv$", []byte(file.Name())); match == true {
-			o.HandleFile(file.Name())
+	fmt.Println(fmt.Sprintf("Watching for CSV files in %s", o.InputDirectory))
+
+	for {
+		files, err := ioutil.ReadDir(o.InputDirectory)
+		if err != nil {
+			panic(err)
 		}
+		for _, file := range files {
+			if match, _ := regexp.Match("^.+\\.csv$", []byte(file.Name())); match == true {
+				fmt.Println(fmt.Sprintf("Processing %s/%s", o.InputDirectory, file.Name()))
+				err := o.HandleFile(file.Name())
+				if err != nil {
+					fmt.Println(err)
+				}
+			}
+		}
+
+		// Wait a bit between cycles to let the calling code catch up and prevent unnecessary work.
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	// Watch for new files
-	w := watcher.New()
-	w.FilterOps(watcher.Create)
-	r := regexp.MustCompile("^.+\\.csv$")
-	w.AddFilterHook(watcher.RegexFilterHook(r, false))
+	// w := watcher.New()
+	// w.FilterOps(watcher.Create)
+	// r := regexp.MustCompile("^.+\\.csv$")
+	// w.AddFilterHook(watcher.RegexFilterHook(r, false))
 
-	go func() {
-		for {
-			select {
-			case event := <-w.Event:
-				fmt.Println(fmt.Sprintf("Processing %s", event.FileInfo.Name()))
-				o.HandleFile(event.FileInfo.Name())
-			case err := <-w.Error:
-				log.Fatalln(err)
-			case <-w.Closed:
-				return
-			}
-		}
-	}()
+	// go func() {
+	// 	for {
+	// 		select {
+	// 		case event := <-w.Event:
+	// 			fmt.Println(fmt.Sprintf("Processing %s", event.FileInfo.Name()))
+	// 			o.HandleFile(event.FileInfo.Name())
+	// 		case err := <-w.Error:
+	// 			log.Fatalln(err)
+	// 		case <-w.Closed:
+	// 			return
+	// 		}
+	// 	}
+	// }()
 
-	if err := w.Add(o.InputDirectory); err != nil {
-		log.Fatalln(err)
-	}
+	// if err := w.Add(o.InputDirectory); err != nil {
+	// 	log.Fatalln(err)
+	// }
 
-	if err := w.Start(time.Millisecond * 100); err != nil {
-		log.Fatalln(err)
-	}
+	// if err := w.Start(time.Millisecond * 100); err != nil {
+	// 	log.Fatalln(err)
+	// }
 }
 
 // HandleFile parses file and writes results to output and error directory
@@ -108,15 +115,6 @@ func (o *Orchestrator) HandleFile(filename string) error {
 		err := ioutil.WriteFile(errorFile, []byte(rowErrorsCsv), 0644)
 		if err != nil {
 			return err
-		}
-	} else {
-		// TODO: Note sure it this is desireable, putting here for convenience
-		_, err := os.Stat(errorFile)
-		if !os.IsNotExist(err) {
-			err = os.Remove(errorFile)
-			if err != nil {
-				return err
-			}
 		}
 	}
 

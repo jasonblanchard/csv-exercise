@@ -40,7 +40,7 @@ func CsvToRecords(s string) ([][]string, error) {
 func RecordsToEntities(input [][]string) ([]*Entity, []*RowError, error) {
 	if len(input) == 0 {
 		// NOOP
-		return nil, nil, nil
+		return []*Entity{}, []*RowError{}, nil
 	}
 
 	rows := input[1:]
